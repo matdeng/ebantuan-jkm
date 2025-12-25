@@ -1,13 +1,21 @@
 // components/admin/AdminHeader.tsx
 "use client";
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+// import { useSession, signOut } from "next-auth/react";
+import { useAuth } from '@/hooks/useAuth';  // ✅ Path alias
 import { useState } from "react";
 
-export default function AdminHeader() {
-    const { data: session } = useSession();
-    const [dropdownOpen, setDropdownOpen] = useState(false);
 
+export default function AdminHeader() {
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+  const { user, loading, logout } = useAuth();
+
+  if (loading) return <div>Loading...</div>;
+//   if (!user) return <div>Please login</div>;
+
+    // const { data: session } = useSession();
+
+    console.log('JWT User:', user); 
     return (
         <header className="bg-white shadow-sm border-b px-6 py-4">
             <div className="flex items-center justify-between">
@@ -42,12 +50,12 @@ export default function AdminHeader() {
                         >
                             <div className="text-right hidden md:block">
                                 <p className="font-semibold text-sm text-slate-900">
-                                    {session?.user?.name}
+                                    {user?.name}
                                 </p>
                                 <p className="text-xs text-slate-500">PENTADBIR SYSTEM</p>
                             </div>
                             <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg">
-                                {session?.user?.name?.[0]?.toUpperCase()}
+                                {user?.name?.[0]?.toUpperCase()}
                             </div>
                         </button>
 
@@ -68,7 +76,7 @@ export default function AdminHeader() {
                                 </Link>
                                 <div className="border-t border-slate-100 my-1"></div>
                                 <button
-                                    onClick={() => signOut({ callbackUrl: "/login" })}
+                                    onClick={logout}
                                     className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-xl mx-1 transition"
                                 >
                                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

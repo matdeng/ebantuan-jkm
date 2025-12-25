@@ -2,10 +2,10 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";  // ← Add ini
-import { useSession, signOut } from "next-auth/react";
+import { useAuth } from '@/hooks/useAuth';  // ✅ Path alias
 
 export default function Header() {
-    const { data: session } = useSession();
+    const { user, logout } = useAuth();
 
     return (
         <header className="bg-gradient-to-r from-orange-500 via-orange-600 to-red-500 text-white shadow-lg">
@@ -25,14 +25,14 @@ export default function Header() {
                     <div className="flex items-center space-x-4">
                         <div className="text-right">  {/* ← Stack vertically */}
                             <span className="text-sm font-medium block">
-                                {session?.user?.name}
+                                {user?.name}
                             </span>
                             <span className="text-xs text-white/80 font-normal">
-                                {session?.user?.role}
+                                {user?.role}
                             </span>
                         </div>
                         <button
-                            onClick={() => signOut({ callbackUrl: "/login" })}
+                            onClick={logout}
                             className="bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 text-white text-sm px-4 py-2 rounded-lg font-semibold transition-all duration-200"
                         >
                             Log Keluar

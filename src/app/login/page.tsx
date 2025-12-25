@@ -1,88 +1,85 @@
 "use client";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";  // GUNA INI bukannya redirect
-import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useAuth } from '@/hooks/useAuth';
 import { useEffect } from "react";
 import { useState } from "react";
+import Swal from "sweetalert2";
 import Link from "next/link";
-import Swal from "sweetalert2";        // TAMBAH INI
-import { getCsrfToken } from "next-auth/react"
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [csrfToken, setCsrfToken] = useState("");
-  const [redirecting, setRedirecting] = useState(false);
 
-  const { data: session, status } = useSession();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
-      // Fallback redirect kalau ada session tapi tak manual redirect
-      if (session.user.role === "PENTADBIR_SYSTEM") {
+    if (user) {
+      if (user.role === "PENTADBIR_SYSTEM") {
         router.push("/admin-dashboard");
       } else {
         router.push("/user-dashboard");
       }
     }
-  }, [status, session, router]);
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
     // 1. VALIDATE DENGAN CUSTOM API
-    const validateRes = await fetch("/api/login", {
+    const res = await fetch("/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
     });
 
-    const validateData = await validateRes.json();
+    const data = await res.json();
 
-    if (!validateRes.ok || validateData.error) {
-      setLoading(false);
+    if (!res.ok || data.error) {
       Swal.fire({
         icon: "error",
-        title: "Login Gagal!",
-        text: validateData.error,
+        title: "Gagal Log Masuk!",
+        text: data.error,
         confirmButtonColor: "#ef4444"
       });
       return;
     }
 
     // 2. VALIDATION OK → CREATE SESSION DENGAN Auth.js
-    const authRes = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    // const authRes = await signIn("credentials", {
+    //   email,
+    //   password,
+    //   redirect: false,
+    // });
 
-    setLoading(false);
+    // ✅ 2. SAVE JWT
+    if (data.token) {
+      // Cookie (secure)
+      document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Strict; Secure`;
 
-    // if (authRes?.ok) {
-    //   Swal.fire({
-    //     icon: "success",
-    //     title: "Login Berjaya!",
-    //     timer: 1500,
-    //     showConfirmButton: false,
-    //     timerProgressBar: true
-    //   }).then(() => {
-    //     // ✅ HABIS TIMER → DIRECT REDIRECT
-    //     if (session?.user?.role === "PENTADBIR_SYSTEM") {
-    //       router.push("/admin-dashboard");
-    //     } else {
-    //       router.push("/user-dashboard");
-    //     }
-    //   });
-    // }
+      // localStorage backup
+      localStorage.setItem("token", data.token);
+
+      Swal.fire({
+        icon: "success",
+        title: "Berjaya Log Masuk!",
+        // text: `Selamat datang, ${data.user.name}!`,
+        timer: 1500,
+        showConfirmButton: false
+      }).then(() => {
+        // Role-based redirect
+        if (data.user.role === "PENTADBIR_SYSTEM") {
+          router.push("/admin-dashboard");
+        } else {
+          router.push("/user-dashboard");
+        }
+      });
+    }
   };
 
 
-  if (status === "loading") return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
@@ -98,7 +95,7 @@ export default function Login() {
             />
           </div>
           <h3 className="text-2xl font-black mb-2 drop-shadow-lg text-center leading-tight">
-            eBANTUANJKM 2.0
+            eBANTUAN JKM 2.0
           </h3>
           <span className="text-xs font-bold uppercase tracking-widest opacity-90">
             Portal Bantuan Kebajikan
@@ -114,7 +111,6 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <input name="csrfToken" type="hidden" value={csrfToken} />
               <label className="block text-sm font-semibold text-slate-600 mb-2">
                 Alamat E-mel
               </label>
@@ -128,7 +124,7 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-4 focus:ring-orange-100 focus:border-orange-400 transition-all duration-200 text-sm"
+                  className="w-full pl-12 pr-4 py-3 border border-slate-200 text-black rounded-xl bg-slate-50 focus:ring-4 focus:ring-orange-100 focus:border-orange-400 transition-all duration-200 text-sm"
                   placeholder="name@example.com"
                   required
                 />
@@ -149,7 +145,7 @@ export default function Login() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-12 py-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-4 focus:ring-orange-100 focus:border-orange-400 transition-all duration-200 text-sm"
+                  className="w-full pl-12 pr-12 py-3 border border-slate-200 text-black rounded-xl bg-slate-50 focus:ring-4 focus:ring-orange-100 focus:border-orange-400 transition-all duration-200 text-sm"
                   placeholder="••••••••"
                   required
                 />

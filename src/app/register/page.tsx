@@ -1,10 +1,10 @@
 "use client";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useAuth } from '@/hooks/useAuth';
 import { useEffect } from "react";
 import { useState } from "react";
 import Link from "next/link";
-import Swal from "sweetalert2"  // TAMBAH INI DI ATAS
+import Swal from "sweetalert2";
 
 export default function Register() {
     const [formData, setFormData] = useState({
@@ -16,23 +16,22 @@ export default function Register() {
     });
 
     const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
-    const { data: session, status } = useSession();
+  const { user, loading } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
-        if (status === "authenticated") {
-            if (session?.user?.role === "PENTADBIR_SYSTEM") {
+        if (user) {
+            if (user?.role === "PENTADBIR_SYSTEM") {
                 router.push("/admin-dashboard");
             } else {
                 router.push("/user-dashboard");
             }
         }
-    }, [status]);
+    }, [user, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
+        // setLoading(true);
         setError("");
 
         // Validate confirm password
@@ -43,7 +42,7 @@ export default function Register() {
                 text: "Kata laluan tidak sepadan",
                 confirmButtonColor: "#ef4444"
             });
-            setLoading(false);
+            // setLoading(false);
             return;
         }
 
@@ -54,7 +53,7 @@ export default function Register() {
                 text: "Sila terima Terma & Syarat",
                 confirmButtonColor: "#ef4444"
             });
-            setLoading(false);
+            // setLoading(false);
             return;
         }
 
