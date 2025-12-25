@@ -46,13 +46,6 @@ export default function Login() {
       return;
     }
 
-    // 2. VALIDATION OK → CREATE SESSION DENGAN Auth.js
-    // const authRes = await signIn("credentials", {
-    //   email,
-    //   password,
-    //   redirect: false,
-    // });
-
     // ✅ 2. SAVE JWT
     if (data.token) {
       // Cookie (secure)

@@ -63,7 +63,7 @@ export function useAuth() {
 
         Swal.fire({
             icon: "success",
-            title: "Log Keluar Berjaya!",
+            title: "Berjaya Log Keluar!",
             // text: `Selamat datang, ${data.user.name}!`,
             timer: 1500,
             showConfirmButton: false
