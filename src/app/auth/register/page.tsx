@@ -16,7 +16,7 @@ export default function Register() {
     });
 
     const [error, setError] = useState("");
-  const { user, loading } = useAuth();
+    const { user, loading } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
@@ -69,21 +69,22 @@ export default function Register() {
                 })
             });
 
+            const data = await res.json(); // Pindah sini untuk debug
+
+            // Tukar success response
             if (res.ok) {
-                // ✅ POP-UP BERJAYA
-                const data = await res.json();
                 Swal.fire({
                     icon: "success",
-                    title: "Berjaya Didaftar!",
-                    text: `Akaun ${data.user.name} berjaya dicipta!`,
+                    title: "Pendaftaran Akaun Pemohon Berjaya!",
+                    text: "Sila semak emel untuk sahkan pendaftaran anda.",
                     timer: 2500,
                     showConfirmButton: false,
-                    confirmButtonColor: "#10b981"
                 }).then(() => {
-                    router.push("/login");
+                    // REDIRECT KE CHECK EMAIL
+                    router.push("/auth/check-email");
                 });
             } else {
-                const data = await res.json();
+                console.log('Error response:', res.status, data); // ✅ Fixed logging
                 Swal.fire({
                     icon: "error",
                     title: "Ralat Pendaftaran!",
@@ -92,14 +93,13 @@ export default function Register() {
                 });
             }
         } catch (err) {
+            console.error('Network error:', err); // ✅ Better logging
             Swal.fire({
                 icon: "error",
                 title: "Ralat!",
                 text: "Ralat rangkaian. Sila cuba lagi.",
                 confirmButtonColor: "#ef4444"
             });
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -299,7 +299,7 @@ export default function Register() {
                         <p className="text-sm text-slate-600">
                             Sudah mempunyai akaun?{' '}
                             <Link
-                                href="/login"
+                                href="/auth/login"
                                 className="font-bold text-slate-900 hover:text-orange-600 transition-colors duration-200"
                             >
                                 Log Masuk Di Sini

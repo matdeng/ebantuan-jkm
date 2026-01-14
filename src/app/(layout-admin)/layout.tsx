@@ -1,9 +1,9 @@
 // app/(admin)/layout.tsx
 "use client";
 import { useSession } from "next-auth/react";
-import AdminSidebar from "../components/admin/AdminSidebar";
-import AdminHeader from "../components/admin/AdminHeader";
-import AdminFooter from "../components/admin/AdminFooter";
+import AdminSidebar from "../../components/admin/AdminSidebar";
+import AdminHeader from "../../components/admin/AdminHeader";
+import AdminFooter from "../../components/admin/AdminFooter";
 
 export default function AdminLayout({
     children,

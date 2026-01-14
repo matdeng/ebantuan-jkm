@@ -4,10 +4,19 @@ export default function UserDashboard() {
     <div className="bg-white min-h-screen">
       <h1 className="text-3xl font-bold mb-8 text-gray-900 px-8 pt-8">Dashboard Pemohon</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-8 pb-12">
+        {/* Card 1: Permohonan Saya - with Add Button */}
         <div className="bg-white/80 backdrop-blur-sm p-8 rounded-3xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-200">
           <h3 className="text-lg font-semibold mb-4 text-slate-800">Permohonan Saya</h3>
           <p className="text-4xl font-black bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">0</p>
-          <p className="text-sm text-slate-500 mt-2">Belum ada permohonan</p>
+          <p className="text-sm text-slate-500 mt-2 mb-6">Belum ada permohonan</p>
+          
+          {/* New Application Button */}
+          <button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 flex items-center justify-center gap-2 text-lg">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Tambah Permohonan Baru
+          </button>
         </div>
 
         {/* Card 2: Status Semasa */}

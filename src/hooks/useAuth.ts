@@ -68,7 +68,7 @@ export function useAuth() {
             timer: 1500,
             showConfirmButton: false
         }).then(() => {
-            router.push('/login');
+            router.push('/auth/login');
         });
         
         router.refresh();

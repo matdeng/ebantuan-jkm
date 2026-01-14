@@ -1,7 +1,7 @@
 // app/(user)/layout.tsx
 "use client";
-import Header from "../components/user/Header";
-import Footer from "../components/user/Footer";
+import Header from "../../components/user/Header";
+import Footer from "../../components/user/Footer";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -25,7 +25,7 @@ export default function UserLayout({
       }
     }, [status]);
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8">
         {children}

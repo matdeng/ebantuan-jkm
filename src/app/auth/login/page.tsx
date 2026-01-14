@@ -28,13 +28,56 @@ export default function Login() {
     e.preventDefault();
 
     // 1. VALIDATE DENGAN CUSTOM API
-    const res = await fetch("/api/login", {
+    const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
     });
 
     const data = await res.json();
+
+    if (res.status === 401 && data.error?.includes("sahkan emel")) {
+      Swal.fire({
+        title: "Emel Belum Disahkan!",
+        text: data.error || "Sila sahkan emel pendaftaran anda.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Hantar Pengesahan Emel",  // ✅ Button baru
+        cancelButtonText: "Batal",
+        confirmButtonColor: "#f97316",
+        cancelButtonColor: "#ef4444"
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          
+          const resendRes = await fetch("/api/auth/resend-verification", {   // ✅ RESEND verification
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              emailToken: data.emailToken
+            })
+          });
+
+          if (resendRes.ok) {
+            Swal.fire({
+              icon: "success",
+              title: "Berjaya!",
+              text: "Emel pengesahan baru telah dihantar. Sila semak inbox!",
+              timer: 3000,
+              showConfirmButton: false
+            }).then(() => {
+              router.push("/auth/check-email");
+            });
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "Gagal",
+              text: "Tidak dapat hantar emel. Sila cuba lagi."
+            });
+          }
+        }
+      });
+      return;
+    }
 
     if (!res.ok || data.error) {
       Swal.fire({
@@ -102,7 +145,29 @@ export default function Login() {
             Log Masuk Akaun
           </h5>
 
+
+
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* MyDigitalID Button */}
+            <button
+              type="button"
+              onClick={() => alert('Redirecting to MyDigitalID Registration...')}
+              className="w-full bg-white border-2 border-slate-200 text-slate-900 py-2 px-6 rounded-2xl font-semibold flex items-center justify-center gap-3 hover:border-orange-400 hover:shadow-xl transition-all duration-200 hover:-translate-y-1"
+            >
+              Log Masuk
+              <img
+                src="https://www.digital-id.my/images/logo/logo_colored.svg"
+                alt="MyDigitalID"
+                className="h-5 w-auto"
+              />
+            </button>
+
+            <div className="flex items-center gap-2 py-4">
+              <div className="flex-1 h-px bg-slate-200"></div>
+              <span className="text-xs font-bold uppercase text-slate-500 px-4">Atau Log Masuk E-mel</span>
+              <div className="flex-1 h-px bg-slate-200"></div>
+            </div>
+
             <div>
               <label className="block text-sm font-semibold text-slate-600 mb-2">
                 Alamat E-mel
@@ -187,7 +252,7 @@ export default function Login() {
             <p className="text-sm text-slate-600">
               Belum mempunyai akaun?{' '}
               <Link
-                href="/register"
+                href="/auth/register"
                 className="font-bold text-slate-900 hover:text-orange-500 transition-colors duration-200"
               >
                 Daftar Akaun Baru
