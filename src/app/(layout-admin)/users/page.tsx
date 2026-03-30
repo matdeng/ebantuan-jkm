@@ -1,7 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import UsersTable from "./UsersTable"; // client component (table)
 
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+
 export default async function UsersPage() {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "PENTADBIR_SYSTEM") {
+    redirect("/auth/login");
+  }
+
   const users = await prisma.user.findMany({
     orderBy: { created_at: "asc" },
   });

@@ -4,11 +4,11 @@ import { useState } from "react";
 import Link from 'next/link';
 
 type UserRow = {
-    id: number;
-    name: string;
-    email: string;
+    id: string;
+    name: string | null;
+    email: string | null;
     role: string;
-    created: string;
+    created: Date;
 };
 
 export default function UsersTable({ initialUsers }: { initialUsers: UserRow[] }) {
@@ -17,7 +17,7 @@ export default function UsersTable({ initialUsers }: { initialUsers: UserRow[] }
     const USERS_PER_PAGE = 10; // 10 users per page
 
     const filteredUsers = initialUsers.filter((user) =>
-        (user.name + user.email).toLowerCase().includes(search.toLowerCase())
+        ((user.name || '') + (user.email || '')).toLowerCase().includes(search.toLowerCase())
     );
 
     // Pagination logic

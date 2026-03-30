@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useAuth } from '@/hooks/useAuth';
+import { useSession, signIn } from "next-auth/react";
 import { useEffect } from "react";
 import { useState } from "react";
 import Link from "next/link";
@@ -14,20 +14,23 @@ export default function Register() {
         confirmPassword: "",
         termsAccepted: false
     });
+    const [loading, setLoading] = useState(false);
 
     const [error, setError] = useState("");
-    const { user, loading } = useAuth();
+    const { data: session, status } = useSession();
     const router = useRouter();
 
     useEffect(() => {
-        if (user) {
-            if (user?.role === "PENTADBIR_SYSTEM") {
+        if (status === "loading") return;
+        if (session?.user) {
+            setLoading(false);
+            if (session.user.role === "PENTADBIR_SYSTEM") {
                 router.push("/admin-dashboard");
             } else {
                 router.push("/user-dashboard");
             }
         }
-    }, [user, router]);
+    }, [session, status, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -58,7 +61,7 @@ export default function Register() {
         }
 
         try {
-            const res = await fetch("/api/register", {
+            const res = await fetch("/api/auth/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

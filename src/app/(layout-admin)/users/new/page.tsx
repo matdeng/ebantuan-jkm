@@ -5,11 +5,16 @@ import { useState } from "react";
 import Swal from "sweetalert2";
 
 export default function NewUser() {
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{
+        name: string;
+        email: string;
+        password: string;
+        role: Role;
+    }>({
         name: "",
         email: "",
         password: "",
-        role: Role,
+        role: Role.PEMOHON,
     });
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -89,7 +94,7 @@ export default function NewUser() {
                             }
                             className="w-full px-4 py-3 border border-slate-200 rounded-xl text-black focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                             placeholder="Ahmad Bin Ali"
-                            required 
+                            required
                         />
                     </div>
 
@@ -106,7 +111,7 @@ export default function NewUser() {
                             }
                             className="w-full px-4 py-3 border border-slate-200 rounded-xl text-black focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                             placeholder="ahmad@example.com"
-                            required 
+                            required
                         />
                     </div>
 
@@ -124,7 +129,7 @@ export default function NewUser() {
                             className="w-full px-4 py-3 border border-slate-200 text-black rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                             placeholder="Minimum 8 aksara"
                             minLength={8}
-                            required 
+                            required
                         />
                     </div>
 

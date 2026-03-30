@@ -1,8 +1,8 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useAuth } from '@/hooks/useAuth';
-import { useEffect } from "react";
-import { useState } from "react";
+// import { useAuth } from '@/hooks/useAuth';
+import { useSession, signIn } from "next-auth/react";
+import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import Link from "next/link";
 
@@ -10,112 +10,122 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const { user, loading } = useAuth();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (user) {
-      if (user.role === "PENTADBIR_SYSTEM") {
+    if (status === "loading") return;
+    if (session?.user) {
+          setLoading(false);
+      if (session.user.role === "PENTADBIR_SYSTEM") {
         router.push("/admin-dashboard");
       } else {
         router.push("/user-dashboard");
       }
     }
-  }, [user, router]);
+  }, [session, status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
-    // 1. VALIDATE DENGAN CUSTOM API
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
+    const res = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
     });
 
-    const data = await res.json();
+    setLoading(false);
 
-    if (res.status === 401 && data.error?.includes("sahkan emel")) {
-      Swal.fire({
-        title: "Emel Belum Disahkan!",
-        text: data.error || "Sila sahkan emel pendaftaran anda.",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Hantar Pengesahan Emel",  // ✅ Button baru
-        cancelButtonText: "Batal",
-        confirmButtonColor: "#f97316",
-        cancelButtonColor: "#ef4444"
-      }).then(async (result) => {
-        if (result.isConfirmed) {
-          
-          const resendRes = await fetch("/api/auth/resend-verification", {   // ✅ RESEND verification
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-              emailToken: data.emailToken
-            })
-          });
+    // ambil session selepas signIn
+    const sessionRes = await fetch("/api/auth/session");
+    const sessionData = await sessionRes.json();
 
-          if (resendRes.ok) {
-            Swal.fire({
-              icon: "success",
-              title: "Berjaya!",
-              text: "Emel pengesahan baru telah dihantar. Sila semak inbox!",
-              timer: 3000,
-              showConfirmButton: false
-            }).then(() => {
-              router.push("/auth/check-email");
+    // ❌ ERROR FLOW (ikut API lama)
+    if (sessionData?.error) {
+      if (sessionData.error === "EMAIL_NOT_VERIFIED") {
+        Swal.fire({
+          icon: "warning",
+          title: "Emel Belum Disahkan",
+          text: "Sila sahkan emel terlebih dahulu sebelum log masuk",
+          showCancelButton: true,
+          confirmButtonText: "Hantar Pengesahan Emel",
+          cancelButtonText: "Batal",
+          confirmButtonColor: "#f97316",
+          cancelButtonColor: "#ef4444",
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            const resendRes = await fetch("/api/auth/resend-verification", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: sessionData.user.email,
+                emailToken: sessionData.user.emailToken,
+              }),
             });
-          } else {
-            Swal.fire({
-              icon: "error",
-              title: "Gagal",
-              text: "Tidak dapat hantar emel. Sila cuba lagi."
-            });
+
+            if (resendRes.ok) {
+              Swal.fire({
+                icon: "success",
+                title: "Berjaya!",
+                text: "Emel pengesahan telah dihantar semula.",
+                timer: 2500,
+                showConfirmButton: false,
+              }).then(() => {
+                router.push("/auth/check-email");
+              });
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Gagal",
+                text: "Tidak dapat hantar emel. Sila cuba lagi.",
+              });
+            }
           }
-        }
-      });
-      return;
-    }
+        });
+        return;
+      }
 
-    if (!res.ok || data.error) {
       Swal.fire({
         icon: "error",
-        title: "Gagal Log Masuk!",
-        text: data.error,
-        confirmButtonColor: "#ef4444"
+        title: "Gagal Log Masuk",
+        text: sessionData.error,
+        confirmButtonColor: "#ef4444",
       });
       return;
     }
 
-    // ✅ 2. SAVE JWT
-    if (data.token) {
-      // Cookie (secure)
-      document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Strict; Secure`;
-
-      // localStorage backup
-      localStorage.setItem("token", data.token);
-
+    // ❌ fallback (credentials salah)
+    if (!res?.ok) {
       Swal.fire({
-        icon: "success",
-        title: "Berjaya Log Masuk!",
-        // text: `Selamat datang, ${data.user.name}!`,
-        timer: 1500,
-        showConfirmButton: false
-      }).then(() => {
-        // Role-based redirect
-        if (data.user.role === "PENTADBIR_SYSTEM") {
-          router.push("/admin-dashboard");
-        } else {
-          router.push("/user-dashboard");
-        }
+        icon: "error",
+        title: "Gagal Log Masuk",
+        text: "Emel atau kata laluan tidak sah.",
       });
+      return;
     }
+
+    // ✅ SUCCESS
+    Swal.fire({
+      icon: "success",
+      title: "Berjaya Log Masuk!",
+      timer: 1200,
+      showConfirmButton: false,
+    }).then(() => {
+      if (sessionData?.user?.role === "PENTADBIR_SYSTEM") {
+        router.push("/admin-dashboard");
+      } else {
+        router.push("/user-dashboard");
+      }
+    });
   };
 
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  if (status === "loading") {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">

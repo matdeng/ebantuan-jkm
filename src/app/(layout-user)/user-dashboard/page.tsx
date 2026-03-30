@@ -1,4 +1,5 @@
 "use client";
+
 export default function UserDashboard() {
   return (
     <div className="bg-white min-h-screen">

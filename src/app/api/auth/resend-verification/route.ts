@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({ where: { emailToken } });
 
-    if (!user || user.email_verified_at) {
+    if (!user || !user.email || user.email_verified_at) {
       return NextResponse.json({
         error: "Akaun tidak wujud atau sudah disahkan"
       }, { status: 400 });

@@ -1,21 +1,25 @@
 // components/admin/AdminHeader.tsx
 "use client";
 import Link from "next/link";
-// import { useSession, signOut } from "next-auth/react";
-import { useAuth } from '@/hooks/useAuth';  // ✅ Path alias
+import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
-
 
 export default function AdminHeader() {
     const [dropdownOpen, setDropdownOpen] = useState(false);
-  const { user, loading, logout } = useAuth();
+    const { data: session, status } = useSession();
+    const user = session?.user;  // ✅ Your user data (id, name, email, role)
+    const loading = status === "loading";
 
-  if (loading) return <div>Loading...</div>;
-//   if (!user) return <div>Please login</div>;
+    if (loading) return <div>Loading...</div>;
 
-    // const { data: session } = useSession();
+    const handleLogout = () => {
+        setDropdownOpen(false);
+        signOut({
+            callbackUrl: "/auth/login",
+            redirect: true
+        });
+    };
 
-    console.log('JWT User:', user); 
     return (
         <header className="bg-white shadow-sm border-b px-6 py-4">
             <div className="flex items-center justify-between">
@@ -76,7 +80,7 @@ export default function AdminHeader() {
                                 </Link>
                                 <div className="border-t border-slate-100 my-1"></div>
                                 <button
-                                    onClick={logout}
+                                    onClick={handleLogout}
                                     className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-xl mx-1 transition"
                                 >
                                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

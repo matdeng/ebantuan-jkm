@@ -36,7 +36,7 @@ export function useAuth() {
 
         if (token) {
             try {
-                const decoded = jwt.decode(token) as any;
+                const decoded = jwt.decode(token) as { userId: number; name: string; email: string; role: string } | null;
                 if (decoded) {
                     setUser({
                         userId: decoded.userId,
@@ -45,8 +45,8 @@ export function useAuth() {
                         role: decoded.role
                     });
                 }
-            } catch (error) {
-                console.error('Invalid token');
+            } catch {
+                // Invalid token
                 // Clear invalid token
                 document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
                 localStorage.removeItem('token');
@@ -70,7 +70,7 @@ export function useAuth() {
         }).then(() => {
             router.push('/auth/login');
         });
-        
+
         router.refresh();
     };
 

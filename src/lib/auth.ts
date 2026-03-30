@@ -1,75 +1,116 @@
 // src/lib/auth.ts
 import NextAuth from "next-auth"
-// import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "./prisma"
 import Credentials from "next-auth/providers/credentials"
+import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import type { Role } from "@/types/auth"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  // adapter: PrismaAdapter(prisma),  // ✅ DATABASE SESSION
-  // session: { strategy: "database" },  // ✅ PENTING
-  session: { strategy: "jwt" },  // ✅ JWT - NO DB SESSION
-  experimental: {
-    skipCsrf: true  // ← Auth.js v5 syntax
-  }, providers: [
+  session: {
+    strategy: "jwt",
+    maxAge: 24 * 60 * 60,
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+
+  providers: [
     Credentials({
+      name: "credentials",
       credentials: {
-        email: { label: "Email" },
-        password: { label: "Password" }
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
 
       async authorize(credentials) {
-        console.log("AUTH DEBUG:", credentials); // DEBUG
-
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email || !credentials?.password) {
+          return {
+            id: "",
+            email: "",
+            name: "",
+            role: "PEMOHON" as Role,
+            error: "Sila masukkan emel dan kata laluan",
+          }
+        }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string }
-        });
+          where: { email: credentials.email as string },
+        })
 
-        console.log("FOUND USER:", user ? user.email : "NO USER"); // DEBUG
+        if (!user || !user.email || !user.name || !user.password) {
+          return {
+            id: "",
+            email: "",
+            name: "",
+            role: "PEMOHON" as Role,
+            error: "Emel tidak wujud. Sila daftar akaun baharu.",
+          }
+        }
 
-        if (!user || !user.password) return null;
-
-        console.log("RAW PASSWORD FROM DB:", user.password); // DEBUG
-        console.log("INPUT PASSWORD:", credentials.password); // DEBUG
+        if (!user.email_verified_at) {
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role as Role,
+            error: "EMAIL_NOT_VERIFIED",
+            emailToken: user.emailToken || undefined,
+          }
+        }
 
         const isValidPassword = await bcrypt.compare(
           credentials.password as string,
           user.password
-        );
+        )
 
-        console.log("BCRYPT RESULT:", isValidPassword); // DEBUG
+        if (!isValidPassword) {
+          return {
+            id: "",
+            email: "",
+            name: "",
+            role: "PEMOHON" as Role,
+            error: "Kata laluan salah.",
+          }
+        }
 
-        if (!isValidPassword) return null;
-
+        // ✅ SUCCESS (macam API lama)
         return {
           id: user.id,
-          name: user.name,
           email: user.email,
-          role: user.role,
-        };
-      }
-
-    })
+          name: user.name,
+          role: user.role as Role,
+        }
+      },
+    }),
   ],
+
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id
-        token.role = user.role
+        token.user = user
+
+        // simpan error dalam token
+        if (user.error) {
+          token.error = user.error
+          token.emailToken = user.emailToken
+        }
       }
       return token
     },
+
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string
-        session.user.role = token.role as string
+      if (token.user) {
+        session.user = token.user as any
       }
+
+      if (token.error) {
+        session.error = token.error as any
+        session.emailToken = token.emailToken as any
+      }
+
       return session
-    }
+    },
   },
+
   pages: {
-    signIn: "/login"
-  }
+    error: "/auth/login",
+  },
 })

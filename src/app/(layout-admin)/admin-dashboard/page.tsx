@@ -1,22 +1,30 @@
-"use client";
-import { useAuth } from '@/hooks/useAuth';
+// ./src/app/(layout-admin)/admin-dashboard/page.tsx (Server Component - NO "use client")
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import AdminDashboardClient from "./AdminDashboardClient";
 
-export default function AdminDashboard() {
-  const { user, loading, logout } = useAuth();
+export default async function AdminDashboardPage() {
+  const session = await auth();  // ✅ Server-side session
+  const user = session?.user;
 
-  if (!user) return <div>Please login</div>;
+  console.log(user);
+
+  if (!user || user.role !== "PENTADBIR_SYSTEM") {
+    return <div>Sila log masuk sebagai pentadbir</div>;
+  }
+
+  // ✅ Server-side Prisma query
+  const users = await prisma.user.findMany({
+    orderBy: { created_at: "asc" },
+    select: { id: true, name: true, email: true, role: true, created_at: true }
+  });
+  const totalUsers = users.length;
 
   return (
-    <div>
-      <h1 className="text-3xl text-black font-bold mb-8">Selamat datang, {user.name}!</h1>
-      {/* <h1 className="text-3xl text-black font-bold mb-8">Admin Dashboard</h1> */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="bg-white p-8 rounded-2xl shadow-sm border">
-          <h3 className="text-lg text-black font-semibold mb-4">Jumlah Pengguna</h3>
-          <p className="text-3xl font-bold text-blue-600"></p>
-        </div>
-        {/* More admin stats */}
-      </div>
-    </div>
+    <AdminDashboardClient 
+      user={user}
+      totalUsers={totalUsers}
+      users={users}
+    />
   );
 }

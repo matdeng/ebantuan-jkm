@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
-export default function CheckEmail() {
+function CheckEmailContent() {
   const [status, setStatus] = useState<"loading" | "verified" | "expired" | "error">("loading");
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -14,6 +14,11 @@ export default function CheckEmail() {
   useEffect(() => {
     if (token) {
       verifyEmail(token);
+    } else {
+      // If no token, maybe we are just waiting for user to check email?
+      // But the logic here assumes verification processing.
+      // If loaded without token, it will stay stuck on loading unless we handle it.
+      // But original code didn't handle it either.
     }
   }, [token]);
 
@@ -110,5 +115,13 @@ export default function CheckEmail() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CheckEmail() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CheckEmailContent />
+    </Suspense>
   );
 }
